@@ -77,6 +77,8 @@ class ReflexAgent(Agent):
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         if successorGameState.isWin():
             return MAX_VALUE
+        if successorGameState.isLose():
+            return MIN_VALUE
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
@@ -152,20 +154,20 @@ class MinimaxAgent(MultiAgentSearchAgent):
         currentDepth = 0
         for action in gameState.getLegalActions(0) :
             nextState = gameState.generateSuccessor(0, action)
-            nextValue = self.value(nextState, currentDepth, 1)
-            if nextValue > maxValue:
+            value = self.value(nextState, currentDepth, 1)
+            if value > maxValue:
                 maxAction = action
-                maxValue = nextValue
+                maxValue = value
         return maxAction
 
     def value(self, gameState, currentDepth, agentIndex):
         #base case -> terminal state
         if currentDepth == self.depth or gameState.isWin() or gameState.isLose():
             return self.evaluationFunction(gameState)
-        #next agent is MAX
+        # agent is MAX
         if agentIndex == 0:
             return self.maxValue(gameState,currentDepth, 0)
-        #next agent is MIN
+        # agent is MIN
         return self.minValue(gameState,currentDepth,agentIndex) 
 
     def maxValue(self, gameState, currentDepth, agentIndex):
@@ -205,11 +207,11 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         currentDepth = 0
         for action in gameState.getLegalActions(0):
             nextState = gameState.generateSuccessor(0, action)
-            nextValue = self.value(nextState, currentDepth, 1, alpha, beta)
-            if nextValue > maxValue:
-                maxValue = nextValue
+            value = self.value(nextState, currentDepth, 1, alpha, beta)
+            if value > maxValue:
+                maxValue = value
                 maxAction = action
-            alpha = max(alpha, maxValue)
+                alpha = max(alpha, maxValue)
         return maxAction
 
     def value(self, gameState, currentDepth, agentIndex, alpha, beta):
@@ -260,9 +262,9 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         currentDepth = 0
         for action in gameState.getLegalActions(0):
             nextState = gameState.generateSuccessor(0, action)
-            nextValue = self.value(nextState, currentDepth, 1)
-            if nextValue >  maxValue:
-                maxValue = nextValue
+            value = self.value(nextState, currentDepth, 1)
+            if value >  maxValue:
+                maxValue = value
                 maxAction = action
         return maxAction
 
@@ -281,14 +283,14 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         return maxValue
 
     def expValue(self, gameState, currentDepth, agentIndex):
-        sum = 0.0
+        weight = 0
         ghostCount = gameState.getNumAgents()-1
         for action in gameState.getLegalActions(agentIndex):
             nextState = gameState.generateSuccessor(agentIndex, action)
             nextDepth = currentDepth+1 if agentIndex%ghostCount==0 else currentDepth
             nextAgent = 0 if agentIndex%ghostCount==0 else agentIndex+1
-            sum += self.value(nextState, nextDepth, nextAgent)
-        return sum
+            weight += self.value(nextState, nextDepth, nextAgent)
+        return weight
 
 
 def betterEvaluationFunction(currentGameState):
@@ -315,6 +317,7 @@ def betterEvaluationFunction(currentGameState):
         dist = util.manhattanDistance(ghostState.getPosition(), newPos)
         closeGhost = min(closeGhost,dist)
         farGhost = max(farGhost,dist)
+        ''' Ghost is close and is not scared '''
         if(closeGhost<SAFE_DIST and scaredTime<(2*SAFE_DIST)):
           return MIN_VALUE
 
